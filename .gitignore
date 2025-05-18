@@ -172,7 +172,4 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
-model/best models/best_large_focal_loss.keras
-model/best models/best_small_cross_entropy.keras
-model/best models/best_small_mixed_loss.keras
-model/best models/best_large_mixed_loss.keras
+model/best models
