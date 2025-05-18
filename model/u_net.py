@@ -139,7 +139,7 @@ def unet_model_same_padding(in_channels = input_channels, out_channels = output_
     c9   = double_conv(m9, 64, "same")                                          # -> 322×322×64
 
     # --- Ausgabe 1×1 Conv ---
-    outputs = Conv2D(out_channels, kernel_size=1, activation="softmax")(c9)     # -> 322×322×2
+    outputs = Conv2D(out_channels, kernel_size=1, activation="softmax")(c9)     # -> 322×322×4
     
     return Model(inputs=inputs, outputs=outputs, name="U-Net_322x322_same_padding")
 

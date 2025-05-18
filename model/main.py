@@ -65,7 +65,7 @@ model.compile(optimizer='adam', loss=[u_net.jaccard_loss_multiclass], metrics=[u
 # Callbacks
 from keras.callbacks import EarlyStopping, ModelCheckpoint
 early_stopping = EarlyStopping(monitor='val_loss', patience=5, restore_best_weights=True)
-model_checkpoint = ModelCheckpoint('best_model.h5', save_best_only=True)
+model_checkpoint = ModelCheckpoint('best_model.keras', save_best_only=True)
 
 history = model.fit(
     X_train,
@@ -74,14 +74,14 @@ history = model.fit(
     verbose=1,
     epochs=50,
     validation_data=(X_test, Y_test_cat),
-    shuffle=False,
+    shuffle=True,
     callbacks=[
         early_stopping,
         model_checkpoint
     ]
 )
 
-model.save('unet_model.h5')
+model.save('unet_model.keras')
 
 # Evaluate the model
 loss, accuracy = model.evaluate(X_test, Y_test_cat)
@@ -92,10 +92,10 @@ print(f"Test Accuracy: {accuracy}")
 import matplotlib.pyplot as plt
 def plot_history(history):
     # Plot training & validation accuracy values
-    plt.plot(history.history['accuracy'])
-    plt.plot(history.history['val_accuracy'])
-    plt.title('Model accuracy')
-    plt.ylabel('Accuracy')
+    plt.plot(history.history['jaccard_coeff_multiclass'])
+    plt.plot(history.history['val_jaccard_coeff_multiclass'])
+    plt.title('Model IoU')
+    plt.ylabel('IoU')
     plt.xlabel('Epoch')
     plt.legend(['Train', 'Test'], loc='upper left')
     plt.show()
@@ -110,3 +110,44 @@ def plot_history(history):
     plt.show()
 
 plot_history(history)
+
+
+# 📦 Modell speichern
+model.save('unet_model.keras')
+
+# 📉 Modell evaluieren
+loss, jaccard = model.evaluate(X_test, Y_test_cat)
+print(f"Test Loss: {loss}")
+print(f"Test Jaccard: {jaccard}")
+
+# 📊 Trainingsverlauf plotten
+plot_history(history)
+
+# 👁️ Beispielvorhersage visualisieren
+def visualize_prediction(model, X_test, Y_test_cat, sample_idx=0):
+    sample = X_test[sample_idx:sample_idx+1]
+    prediction = model.predict(sample)
+    
+    pred_mask = np.argmax(prediction[0], axis=-1)
+    true_mask = np.argmax(Y_test_cat[sample_idx], axis=-1)
+
+    plt.figure(figsize=(12, 4))
+
+    plt.subplot(1, 3, 1)
+    plt.title("Input")
+    plt.imshow(sample[0, :, :, 0], cmap='gray')
+
+    plt.subplot(1, 3, 2)
+    plt.title("Ground Truth")
+    plt.imshow(true_mask, cmap='jet')
+
+    plt.subplot(1, 3, 3)
+    plt.title("Prediction")
+    plt.imshow(pred_mask, cmap='jet')
+
+    plt.tight_layout()
+    plt.show()
+
+# 🔍 Visualisierung eines Testbildes (Index 0)
+visualize_prediction(model, X_test, Y_test_cat, sample_idx=0)
+
