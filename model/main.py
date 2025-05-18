@@ -3,6 +3,7 @@ import os
 import cv2
 import numpy as np
 import tensorflow as tf
+import random
 print(tf.config.list_physical_devices('GPU'))
 
 X_TRAIN_PATH = 'datasets/Dataset_UHCSDB/Patched/images_patched/'
@@ -70,7 +71,7 @@ model_checkpoint = ModelCheckpoint('best_model.keras', save_best_only=True)
 history = model.fit(
     X_train,
     Y_train_cat,
-    batch_size=16,
+    batch_size=8,
     verbose=1,
     epochs=50,
     validation_data=(X_test, Y_test_cat),
@@ -109,45 +110,33 @@ def plot_history(history):
     plt.legend(['Train', 'Test'], loc='upper left')
     plt.show()
 
-plot_history(history)
+#plot_history(history)
 
+# Pick a random test image
+idx = random.randint(0, X_test.shape[0] - 1)
+test_img = X_test[idx]
+true_mask = Y_test[idx]
 
-# 📦 Modell speichern
-model.save('unet_model.keras')
+# Predict the mask
+pred_mask = model.predict(np.expand_dims(test_img, axis=0))
+pred_mask = np.argmax(pred_mask, axis=-1)[0]
 
-# 📉 Modell evaluieren
-loss, jaccard = model.evaluate(X_test, Y_test_cat)
-print(f"Test Loss: {loss}")
-print(f"Test Jaccard: {jaccard}")
+# Plot the images
+plt.figure(figsize=(15, 5))
 
-# 📊 Trainingsverlauf plotten
-plot_history(history)
+plt.subplot(1, 3, 1)
+plt.title("Test Image")
+plt.imshow(test_img, cmap='gray')
+plt.axis('off')
 
-# 👁️ Beispielvorhersage visualisieren
-def visualize_prediction(model, X_test, Y_test_cat, sample_idx=0):
-    sample = X_test[sample_idx:sample_idx+1]
-    prediction = model.predict(sample)
-    
-    pred_mask = np.argmax(prediction[0], axis=-1)
-    true_mask = np.argmax(Y_test_cat[sample_idx], axis=-1)
+plt.subplot(1, 3, 2)
+plt.title("True Mask")
+plt.imshow(true_mask, cmap='nipy_spectral', vmin=0, vmax=n_classes-1)
+plt.axis('off')
 
-    plt.figure(figsize=(12, 4))
+plt.subplot(1, 3, 3)
+plt.title("Predicted Mask")
+plt.imshow(pred_mask, cmap='nipy_spectral', vmin=0, vmax=n_classes-1)
+plt.axis('off')
 
-    plt.subplot(1, 3, 1)
-    plt.title("Input")
-    plt.imshow(sample[0, :, :, 0], cmap='gray')
-
-    plt.subplot(1, 3, 2)
-    plt.title("Ground Truth")
-    plt.imshow(true_mask, cmap='jet')
-
-    plt.subplot(1, 3, 3)
-    plt.title("Prediction")
-    plt.imshow(pred_mask, cmap='jet')
-
-    plt.tight_layout()
-    plt.show()
-
-# 🔍 Visualisierung eines Testbildes (Index 0)
-visualize_prediction(model, X_test, Y_test_cat, sample_idx=0)
-
+plt.show()

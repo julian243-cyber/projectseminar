@@ -31,7 +31,7 @@ def jaccard_coeff(y_true, y_pred):
 def jaccard_coeff_multiclass(y_true, y_pred):
     y_true = tf.cast(y_true, tf.float32)
     y_pred = tf.cast(y_pred, tf.float32)
-
+    
     # Compute per-class IoU
     intersection = tf.reduce_sum(y_true * y_pred, axis=[0, 1, 2])
     union = tf.reduce_sum(y_true + y_pred, axis=[0, 1, 2]) - intersection
@@ -41,8 +41,31 @@ def jaccard_coeff_multiclass(y_true, y_pred):
 def jaccard_loss(y_true, y_pred):
     return -jaccard_coeff(y_true, y_pred)
 
-def jaccard_loss_multiclass(y_true, y_pred):
-    return -jaccard_coeff_multiclass(y_true, y_pred)
+import tensorflow as tf
+
+def weighted_jaccard_loss(y_true, y_pred, class_weights):
+    """
+    y_true: one-hot encoded ground truth, shape (batch, H, W, C)
+    y_pred: softmax probabilities, shape (batch, H, W, C)
+    class_weights: 1D tensor of shape (C,) with weight per class
+    """
+    y_true = tf.cast(y_true, tf.float32)
+    y_pred = tf.clip_by_value(y_pred, 1e-7, 1.0)  # avoid log(0) issues
+
+    intersection = tf.reduce_sum(y_true * y_pred, axis=[0, 1, 2])  # per class
+    union = tf.reduce_sum(y_true + y_pred - y_true * y_pred, axis=[0, 1, 2])  # per class
+
+    iou = intersection / (union + 1e-7)  # avoid division by zero
+
+    weighted_iou = iou * class_weights
+    return 1.0 - tf.reduce_sum(weighted_iou) / tf.reduce_sum(class_weights)
+
+def make_weighted_jaccard_loss(class_weights):
+    class_weights_tensor = tf.constant(class_weights, dtype=tf.float32)
+    def loss(y_true, y_pred):
+        return weighted_jaccard_loss(y_true, y_pred, class_weights_tensor)
+    return loss
+
 
 def double_conv(x, out_channels, padding='valid'):
     """(Conv3×3, ReLU) × 2"""
