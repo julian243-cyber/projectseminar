@@ -173,3 +173,5 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 model/best models
+best_model.keras
+datasets/Dataset_UHCSDB/~$UHCSDB_Metadata_Segmentierung.xlsx
